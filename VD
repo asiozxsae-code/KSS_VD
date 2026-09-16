@@ -1,6 +1,7 @@
 --==================================================
 -- VIOLENCE DISTRICT UI
 -- PlaceId: 93978595733734
+-- UI ไม่หายหลังตาย
 --==================================================
 
 local Players = game:GetService("Players")
@@ -246,7 +247,6 @@ local function createESP(object,color)
     end
 
     local highlight = Instance.new("Highlight")
-
     highlight.Name = "ZERO_ESP"
     highlight.FillColor = color
     highlight.OutlineColor = color
@@ -315,14 +315,12 @@ local function getPlayerColor(plr)
         if string.find(teamName,"killer")
         or string.find(teamName,"murderer")
         or string.find(teamName,"ฆาตกร") then
-
             return RED
         end
 
         if string.find(teamName,"survivor")
         or string.find(teamName,"survive")
         or string.find(teamName,"ผู้เอาชีวิต") then
-
             return GREEN
         end
     end
@@ -336,14 +334,12 @@ local function getPlayerColor(plr)
         if string.find(role,"killer")
         or string.find(role,"murderer")
         or string.find(role,"ฆาตกร") then
-
             return RED
         end
 
         if string.find(role,"survivor")
         or string.find(role,"survive")
         or string.find(role,"ผู้เอาชีวิต") then
-
             return GREEN
         end
     end
@@ -395,12 +391,9 @@ espButton.Activated:Connect(function()
     ESPOn = not ESPOn
 
     if ESPOn then
-
         espButton.Text = "ปิด"
         updateESP()
-
     else
-
         espButton.Text = "เปิด"
         removeESP()
     end
@@ -417,7 +410,7 @@ task.spawn(function()
 end)
 
 --==================================================
--- BRIGHTNESS BUTTON
+-- BRIGHTNESS
 --==================================================
 
 brightButton.Activated:Connect(function()
@@ -425,12 +418,9 @@ brightButton.Activated:Connect(function()
     BrightnessOn = not BrightnessOn
 
     if BrightnessOn then
-
         brightButton.Text = "เปิด"
         Brightness()
-
     else
-
         brightButton.Text = "ปิด"
     end
 end)
@@ -452,13 +442,12 @@ autoBright.Activated:Connect(function()
         Brightness()
 
     else
-
         autoBright.Text = "ออโต้ : OFF"
     end
 end)
 
 --==================================================
--- NO FOG BUTTON
+-- NO FOG
 --==================================================
 
 fogButton.Activated:Connect(function()
@@ -466,12 +455,9 @@ fogButton.Activated:Connect(function()
     NoFogOn = not NoFogOn
 
     if NoFogOn then
-
         fogButton.Text = "เปิด"
         NoFog()
-
     else
-
         fogButton.Text = "ปิด"
     end
 end)
@@ -493,7 +479,6 @@ autoFog.Activated:Connect(function()
         NoFog()
 
     else
-
         autoFog.Text = "ออโต้ : OFF"
     end
 end)
@@ -523,13 +508,11 @@ Instance.new("UICorner",showButton).CornerRadius = UDim.new(1,0)
 --==================================================
 
 closeButton.Activated:Connect(function()
-
     main.Visible = false
     showButton.Visible = true
 end)
 
 showButton.Activated:Connect(function()
-
     main.Visible = true
     showButton.Visible = false
 end)
@@ -556,10 +539,10 @@ end)
 UIS.InputChanged:Connect(function(input)
 
     if dragging and
-        (
-            input.UserInputType == Enum.UserInputType.Touch
-            or input.UserInputType == Enum.UserInputType.MouseMovement
-        ) then
+    (
+        input.UserInputType == Enum.UserInputType.Touch
+        or input.UserInputType == Enum.UserInputType.MouseMovement
+    ) then
 
         local delta = input.Position - dragStart
 
@@ -576,7 +559,6 @@ UIS.InputEnded:Connect(function(input)
 
     if input.UserInputType == Enum.UserInputType.Touch
     or input.UserInputType == Enum.UserInputType.MouseButton1 then
-
         dragging = false
     end
 end)
@@ -591,10 +573,7 @@ scale.Parent = main
 local function resize()
 
     local camera = workspace.CurrentCamera
-
-    if not camera then
-        return
-    end
+    if not camera then return end
 
     local size = camera.ViewportSize
 
@@ -615,19 +594,24 @@ workspace.CurrentCamera
     :Connect(resize)
 
 --==================================================
--- KEEP UI AFTER RESPAWN
+-- KEEP UI AFTER DEATH / RESPAWN
 --==================================================
 
-player.CharacterAdded:Connect(function()
+local function restoreUI()
 
-    task.wait(1)
+    task.wait(0.2)
 
-    if gui.Parent ~= PlayerGui then
+    if gui and gui.Parent ~= PlayerGui then
         gui.Parent = PlayerGui
     end
 
-    main.Visible = true
-    showButton.Visible = false
+    if main then
+        main.Visible = true
+    end
+
+    if showButton then
+        showButton.Visible = false
+    end
 
     if BrightnessOn then
         Brightness()
@@ -638,7 +622,36 @@ player.CharacterAdded:Connect(function()
     end
 
     if ESPOn then
-        task.wait(0.5)
+        task.wait(0.3)
         updateESP()
+    end
+end
+
+player.CharacterAdded:Connect(function()
+
+    restoreUI()
+
+    -- ตรวจซ้ำหลังเกิด
+    for i = 1,10 do
+
+        task.wait(0.5)
+
+        if gui and gui.Parent ~= PlayerGui then
+            gui.Parent = PlayerGui
+        end
+    end
+end)
+
+--==================================================
+-- EXTRA UI PROTECTION
+--==================================================
+
+task.spawn(function()
+
+    while task.wait(1) do
+
+        if gui and gui.Parent ~= PlayerGui then
+            gui.Parent = PlayerGui
+        end
     end
 end)
