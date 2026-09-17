@@ -1,13 +1,17 @@
 --==================================================
 -- KSS VD | WINDUI
--- IMAGE BACKGROUND
+-- ESP + NOCLIP + THIRD PERSON + INFINITE ZOOM
+-- AUTO GENERATOR / AUTO SKILL CHECK
+-- FIX INSTANT NEAR END
 --==================================================
 
 local Players = game:GetService("Players")
 local Lighting = game:GetService("Lighting")
 local RunService = game:GetService("RunService")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local LocalPlayer = Players.LocalPlayer
+local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
 
 if game.PlaceId ~= 93978595733734 then
     warn("KSS VD: Wrong Place")
@@ -25,31 +29,62 @@ local AutoNoFog = false
 local ESPOn = false
 local NoclipOn = false
 local ThirdPersonOn = false
+local InfiniteZoomOn = false
+
+-- AUTO GENERATOR
+local AutoGeneratorOn = false
+local GeneratorMode = "SUCCESS"
+
+local SUCCESS_MIN = 102
+local SUCCESS_MAX = 116
+
+local NEUTRAL_MIN = 116
+local NEUTRAL_MAX = 159
+
+local TriggerDelay = 0.035
+local LastTrigger = 0
+local GeneratorBusy = false
+
+local ScourgeActive = false
+local ScourgeRound = 0
 
 --==================================================
 -- LIGHTING
 --==================================================
 
 local function Brightness()
+
     Lighting.Brightness = 2.5
     Lighting.ExposureCompensation = 0.8
-    Lighting.Ambient = Color3.fromRGB(130,130,130)
-    Lighting.OutdoorAmbient = Color3.fromRGB(150,150,150)
-    Lighting.ColorShift_Top = Color3.fromRGB(235,235,235)
-    Lighting.ColorShift_Bottom = Color3.fromRGB(220,220,220)
+
+    Lighting.Ambient =
+        Color3.fromRGB(130,130,130)
+
+    Lighting.OutdoorAmbient =
+        Color3.fromRGB(150,150,150)
+
+    Lighting.ColorShift_Top =
+        Color3.fromRGB(235,235,235)
+
+    Lighting.ColorShift_Bottom =
+        Color3.fromRGB(220,220,220)
+
     Lighting.ClockTime = 14
 end
 
 local function NoFog()
+
     Lighting.FogStart = 100000
     Lighting.FogEnd = 100000
 
-    for _, obj in ipairs(Lighting:GetChildren()) do
+    for _,obj in ipairs(Lighting:GetChildren()) do
+
         if obj:IsA("Atmosphere") then
             obj.Density = 0
             obj.Haze = 0
             obj.Glare = 0
         end
+
     end
 end
 
@@ -59,31 +94,44 @@ end
 
 local ESPObjects = {}
 
-local RED = Color3.fromRGB(255,60,60)
-local GREEN = Color3.fromRGB(60,255,100)
-local ORANGE = Color3.fromRGB(255,170,0)
+local RED =
+    Color3.fromRGB(255,60,60)
 
-local function createESP(object, color)
+local GREEN =
+    Color3.fromRGB(60,255,100)
+
+local ORANGE =
+    Color3.fromRGB(255,170,0)
+
+local function createESP(object,color)
 
     if not object or not object.Parent then
         return
     end
 
     if ESPObjects[object] then
+
         ESPObjects[object].FillColor = color
         ESPObjects[object].OutlineColor = color
+
         return
     end
 
-    local highlight = Instance.new("Highlight")
+    local highlight =
+        Instance.new("Highlight")
 
     highlight.Name = "ZERO_ESP"
     highlight.Adornee = object
+
     highlight.FillColor = color
     highlight.FillTransparency = 0.65
+
     highlight.OutlineColor = color
     highlight.OutlineTransparency = 0
-    highlight.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
+
+    highlight.DepthMode =
+        Enum.HighlightDepthMode.AlwaysOnTop
+
     highlight.Parent = object
 
     ESPObjects[object] = highlight
@@ -94,6 +142,7 @@ local function removeESP(object)
     local esp = ESPObjects[object]
 
     if esp then
+
         pcall(function()
             esp:Destroy()
         end)
@@ -104,7 +153,7 @@ end
 
 local function clearESP()
 
-    for object, esp in pairs(ESPObjects) do
+    for object,esp in pairs(ESPObjects) do
 
         pcall(function()
             esp:Destroy()
@@ -116,29 +165,34 @@ end
 
 local function isGenerator(object)
 
-    local name = string.lower(object.Name)
+    local name =
+        string.lower(object.Name)
 
-    return string.find(name, "generator")
-        or string.find(name, "เครื่องปั่น")
+    return string.find(name,"generator")
+        or string.find(name,"เครื่องปั่น")
 end
 
 local function getPlayerColor(player)
 
-    local role = player:GetAttribute("Role")
+    local role =
+        player:GetAttribute("Role")
 
     if role then
 
-        role = string.lower(tostring(role))
+        role =
+            string.lower(tostring(role))
 
-        if string.find(role, "killer")
-        or string.find(role, "murderer")
-        or string.find(role, "ฆาตกร") then
+        if string.find(role,"killer")
+        or string.find(role,"murderer")
+        or string.find(role,"ฆาตกร") then
+
             return RED
         end
 
-        if string.find(role, "survivor")
-        or string.find(role, "survive")
-        or string.find(role, "ผู้รอดชีวิต") then
+        if string.find(role,"survivor")
+        or string.find(role,"survive")
+        or string.find(role,"ผู้รอดชีวิต") then
+
             return GREEN
         end
     end
@@ -147,17 +201,20 @@ local function getPlayerColor(player)
 
     if team then
 
-        local teamName = string.lower(team.Name)
+        local teamName =
+            string.lower(team.Name)
 
-        if string.find(teamName, "killer")
-        or string.find(teamName, "murderer")
-        or string.find(teamName, "ฆาตกร") then
+        if string.find(teamName,"killer")
+        or string.find(teamName,"murderer")
+        or string.find(teamName,"ฆาตกร") then
+
             return RED
         end
 
-        if string.find(teamName, "survivor")
-        or string.find(teamName, "survive")
-        or string.find(teamName, "ผู้รอดชีวิต") then
+        if string.find(teamName,"survivor")
+        or string.find(teamName,"survive")
+        or string.find(teamName,"ผู้รอดชีวิต") then
+
             return GREEN
         end
     end
@@ -171,17 +228,20 @@ local function updatePlayerESP()
         return
     end
 
-    for _, player in ipairs(Players:GetPlayers()) do
+    for _,player in ipairs(Players:GetPlayers()) do
 
         if player ~= LocalPlayer then
 
-            local character = player.Character
+            local character =
+                player.Character
 
             if character and character.Parent then
+
                 createESP(
                     character,
                     getPlayerColor(player)
                 )
+
             end
         end
     end
@@ -193,7 +253,7 @@ local function updateGeneratorESP()
         return
     end
 
-    for _, object in ipairs(workspace:GetDescendants()) do
+    for _,object in ipairs(workspace:GetDescendants()) do
 
         if isGenerator(object) then
 
@@ -206,11 +266,13 @@ local function updateGeneratorESP()
                     Players:GetPlayerFromCharacter(model)
 
                 if not player then
-                    createESP(object, ORANGE)
+                    createESP(object,ORANGE)
                 end
 
             else
-                createESP(object, ORANGE)
+
+                createESP(object,ORANGE)
+
             end
         end
     end
@@ -259,7 +321,7 @@ local function setupPlayer(player)
     end)
 end
 
-for _, player in ipairs(Players:GetPlayers()) do
+for _,player in ipairs(Players:GetPlayers()) do
     setupPlayer(player)
 end
 
@@ -278,26 +340,29 @@ end)
 --==================================================
 
 local function setNoclip(state)
+
     NoclipOn = state
 end
 
 RunService.Stepped:Connect(function()
 
-    if not NoclipOn then
+    local character =
+        LocalPlayer.Character
+
+    if not character then
         return
     end
 
-    local character = LocalPlayer.Character
+    if NoclipOn then
 
-    if character then
-
-        for _, part in ipairs(character:GetDescendants()) do
+        for _,part in ipairs(character:GetDescendants()) do
 
             if part:IsA("BasePart") then
                 part.CanCollide = false
             end
 
         end
+
     end
 end)
 
@@ -309,16 +374,44 @@ local function setThirdPerson(state)
 
     ThirdPersonOn = state
 
+    LocalPlayer.CameraMode =
+        Enum.CameraMode.Classic
+
     if state then
 
-        LocalPlayer.CameraMode = Enum.CameraMode.Classic
         LocalPlayer.CameraMinZoomDistance = 5
-        LocalPlayer.CameraMaxZoomDistance = 20
 
     else
 
-        LocalPlayer.CameraMode = Enum.CameraMode.Classic
         LocalPlayer.CameraMinZoomDistance = 0.5
+
+    end
+
+    if InfiniteZoomOn then
+
+        LocalPlayer.CameraMaxZoomDistance = 100000
+
+    else
+
+        LocalPlayer.CameraMaxZoomDistance = 20
+
+    end
+end
+
+--==================================================
+-- INFINITE ZOOM
+--==================================================
+
+local function setInfiniteZoom(state)
+
+    InfiniteZoomOn = state
+
+    if state then
+
+        LocalPlayer.CameraMaxZoomDistance = 100000
+
+    else
+
         LocalPlayer.CameraMaxZoomDistance = 20
 
     end
@@ -344,6 +437,713 @@ task.spawn(function()
 end)
 
 --==================================================
+-- AUTO GENERATOR
+--==================================================
+
+local Check
+local Line
+local Goal
+local Action
+
+local function RefreshGeneratorReferences()
+
+    pcall(function()
+
+        local SkillGui =
+            PlayerGui:FindFirstChild(
+                "SkillCheckPromptGui"
+            )
+
+        if SkillGui then
+
+            Check =
+                SkillGui:FindFirstChild("Check")
+
+            if Check then
+
+                Line =
+                    Check:FindFirstChild("Line")
+
+                Goal =
+                    Check:FindFirstChild("Goal")
+
+            end
+
+        else
+
+            Check = nil
+            Line = nil
+            Goal = nil
+
+        end
+
+        local Survivor =
+            PlayerGui:FindFirstChild(
+                "Survivor-mob"
+            )
+
+        if Survivor then
+
+            local Controls =
+                Survivor:FindFirstChild("Controls")
+
+            if Controls then
+
+                Action =
+                    Controls:FindFirstChild("action")
+
+            end
+
+        else
+
+            Action = nil
+
+        end
+    end)
+end
+
+RefreshGeneratorReferences()
+
+-- รีเฟรช GUI บ่อยขึ้น
+task.spawn(function()
+
+    while task.wait(0.2) do
+
+        if AutoGeneratorOn then
+            RefreshGeneratorReferences()
+        end
+
+    end
+end)
+
+--==================================================
+-- ACTION
+--==================================================
+
+local function TriggerGeneratorAction()
+
+    if not Action
+    or not Action.Parent then
+
+        RefreshGeneratorReferences()
+    end
+
+    if not Action then
+        return false
+    end
+
+    local now = os.clock()
+
+    if now - LastTrigger < TriggerDelay then
+        return false
+    end
+
+    LastTrigger = now
+
+    pcall(function()
+
+        if Action:IsA("GuiButton") then
+            Action:Activate()
+        end
+
+    end)
+
+    if typeof(firesignal) == "function" then
+
+        pcall(function()
+
+            if Action.MouseButton1Down then
+                firesignal(
+                    Action.MouseButton1Down
+                )
+            end
+
+        end)
+    end
+
+    return true
+end
+
+--==================================================
+-- ANGLE
+--==================================================
+
+local function GetAngle()
+
+    if not Line or not Goal then
+        return nil
+    end
+
+    return
+        tonumber(Line.Rotation) or 0,
+        tonumber(Goal.Rotation) or 0
+end
+
+local function IsSuccess()
+
+    local LineRotation,GoalRotation =
+        GetAngle()
+
+    if not LineRotation then
+        return false
+    end
+
+    local Min =
+        GoalRotation + SUCCESS_MIN
+
+    local Max =
+        GoalRotation + SUCCESS_MAX
+
+    return
+        LineRotation >= Min
+        and LineRotation <= Max
+end
+
+local function IsNeutral()
+
+    local LineRotation,GoalRotation =
+        GetAngle()
+
+    if not LineRotation then
+        return false
+    end
+
+    local Min =
+        GoalRotation + NEUTRAL_MIN
+
+    local Max =
+        GoalRotation + NEUTRAL_MAX
+
+    return
+        LineRotation > Min
+        and LineRotation <= Max
+end
+
+--==================================================
+-- INSTANT NORMAL
+--==================================================
+
+local function InstantNormal()
+
+    if not Check
+    or not Line
+    or not Goal then
+
+        RefreshGeneratorReferences()
+    end
+
+    if not Check
+    or not Line
+    or not Goal then
+        return
+    end
+
+    if not Check.Visible then
+        return
+    end
+
+    local GoalRotation =
+        tonumber(Goal.Rotation) or 0
+
+    Line.Rotation =
+        GoalRotation + 109
+
+    TriggerGeneratorAction()
+end
+
+--==================================================
+-- INSTANT SCOURGE
+--==================================================
+
+local function InstantScourge()
+
+    if not AutoGeneratorOn then
+        return
+    end
+
+    if not ScourgeActive then
+        return
+    end
+
+    if not Line or not Goal then
+        RefreshGeneratorReferences()
+    end
+
+    if not Line or not Goal then
+        return
+    end
+
+    local GoalRotation =
+        tonumber(Goal.Rotation) or 0
+
+    Line.Rotation =
+        GoalRotation + 109
+
+    TriggerGeneratorAction()
+
+    ScourgeRound += 1
+end
+
+--==================================================
+-- KING SCOURGE
+--==================================================
+
+local KingScourgeStart
+local KingScourgeEnd
+
+pcall(function()
+
+    local Remotes =
+        ReplicatedStorage:WaitForChild(
+            "Remotes"
+        )
+
+    local KillerPerks =
+        Remotes:WaitForChild(
+            "KillerPerks"
+        )
+
+    local KingScourge =
+        KillerPerks:WaitForChild(
+            "kingscourge"
+        )
+
+    KingScourgeStart =
+        KingScourge:WaitForChild(
+            "KingScourgeStart"
+        )
+
+    KingScourgeEnd =
+        KingScourge:WaitForChild(
+            "KingScourgeEnd"
+        )
+end)
+
+if KingScourgeStart then
+
+    KingScourgeStart.OnClientEvent:Connect(function()
+
+        if not AutoGeneratorOn then
+            return
+        end
+
+        ScourgeActive = true
+        ScourgeRound = 0
+        GeneratorBusy = false
+
+        task.defer(function()
+
+            if AutoGeneratorOn
+            and GeneratorMode == "INSTANT" then
+
+                InstantScourge()
+
+            end
+
+        end)
+    end)
+end
+
+if KingScourgeEnd then
+
+    KingScourgeEnd.OnClientEvent:Connect(function()
+
+        ScourgeActive = false
+        GeneratorBusy = false
+
+    end)
+end
+
+--==================================================
+-- SKILL CHECK LOOP
+--==================================================
+
+local PreviousVisible = false
+
+RunService.RenderStepped:Connect(function()
+
+    if not AutoGeneratorOn then
+
+        PreviousVisible = false
+        return
+    end
+
+    if not Check
+    or not Check.Parent then
+
+        RefreshGeneratorReferences()
+    end
+
+    if not Check then
+        return
+    end
+
+    local Visible =
+        Check.Visible
+
+    -- Skill Check เปิดใหม่
+    if Visible and not PreviousVisible then
+
+        GeneratorBusy = false
+
+        if not ScourgeActive then
+
+            if GeneratorMode == "INSTANT" then
+                InstantNormal()
+            end
+
+        end
+    end
+
+    PreviousVisible = Visible
+
+    -- SUCCESS / NEUTRAL
+    if Visible and not ScourgeActive then
+
+        if not GeneratorBusy then
+
+            local ShouldTrigger = false
+
+            if GeneratorMode == "SUCCESS" then
+
+                ShouldTrigger =
+                    IsSuccess()
+
+            elseif GeneratorMode == "NEUTRAL" then
+
+                ShouldTrigger =
+                    IsNeutral()
+
+            end
+
+            if ShouldTrigger then
+
+                GeneratorBusy = true
+
+                TriggerGeneratorAction()
+
+                task.delay(
+                    0.07,
+                    function()
+                        GeneratorBusy = false
+                    end
+                )
+
+            end
+        end
+    end
+
+    -- SCOURGE
+    if ScourgeActive and Visible then
+
+        if GeneratorMode == "SUCCESS" then
+
+            if not GeneratorBusy
+            and IsSuccess() then
+
+                GeneratorBusy = true
+
+                TriggerGeneratorAction()
+
+                task.delay(
+                    0.06,
+                    function()
+                        GeneratorBusy = false
+                    end
+                )
+
+            end
+
+        elseif GeneratorMode == "NEUTRAL" then
+
+            if not GeneratorBusy
+            and IsNeutral() then
+
+                GeneratorBusy = true
+
+                TriggerGeneratorAction()
+
+                task.delay(
+                    0.06,
+                    function()
+                        GeneratorBusy = false
+                    end
+                )
+
+            end
+        end
+    end
+end)
+
+--==================================================
+-- INSTANT LOOP
+-- FIX NEAR GENERATOR END
+--==================================================
+
+task.spawn(function()
+
+    local LastGoalRotation = nil
+    local LastCheckState = false
+
+    while task.wait(0.01) do
+
+        if AutoGeneratorOn
+        and GeneratorMode == "INSTANT" then
+
+            if not Check
+            or not Check.Parent
+            or not Goal
+            or not Line then
+
+                RefreshGeneratorReferences()
+            end
+
+            if Check
+            and Check.Visible
+            and Goal
+            and Line then
+
+                local CurrentGoal =
+                    tonumber(Goal.Rotation) or 0
+
+                -- Skill Check ใหม่
+                if not LastCheckState then
+
+                    LastCheckState = true
+                    LastGoalRotation =
+                        CurrentGoal
+
+                    if ScourgeActive then
+                        InstantScourge()
+                    else
+                        InstantNormal()
+                    end
+
+                -- Goal เปลี่ยน
+                elseif LastGoalRotation == nil
+                or math.abs(
+                    CurrentGoal
+                    - LastGoalRotation
+                ) > 1 then
+
+                    LastGoalRotation =
+                        CurrentGoal
+
+                    if ScourgeActive then
+                        InstantScourge()
+                    else
+                        InstantNormal()
+                    end
+                end
+
+            else
+
+                -- Skill Check หายแล้ว
+                -- พร้อมรับรอบถัดไป
+                LastCheckState = false
+                LastGoalRotation = nil
+
+            end
+
+        else
+
+            LastCheckState = false
+            LastGoalRotation = nil
+
+        end
+    end
+end)
+
+--==================================================
+-- RESPAWN FIX
+--==================================================
+
+LocalPlayer.CharacterAdded:Connect(function()
+
+    task.wait(1)
+
+    RefreshGeneratorReferences()
+
+    if InfiniteZoomOn then
+        LocalPlayer.CameraMaxZoomDistance = 100000
+    end
+
+    if ThirdPersonOn then
+        LocalPlayer.CameraMode =
+            Enum.CameraMode.Classic
+
+        LocalPlayer.CameraMinZoomDistance = 5
+    end
+end)
+
+--==================================================
+
+--==================================================
+-- AUTO AIM | KSS VD
+--==================================================
+
+local UserInputService = game:GetService("UserInputService")
+
+local KILLER_MARKER_NAME = "Lookscriptkiller"
+local AutoAimOn = false
+
+local FireRemote =
+    ReplicatedStorage
+    :WaitForChild("Remotes")
+    :WaitForChild("Items")
+    :WaitForChild("Twist of Fate")
+    :WaitForChild("Fire")
+
+local ConnectedShootButtons = {}
+
+local function GetKillerBody(character)
+    if not character then
+        return nil
+    end
+
+    return character:FindFirstChild("UpperTorso")
+        or character:FindFirstChild("Torso")
+        or character:FindFirstChild("LowerTorso")
+        or character:FindFirstChild("HumanoidRootPart")
+end
+
+local function GetNearestKiller()
+    local myChar = LocalPlayer.Character
+    local myHRP = myChar and myChar:FindFirstChild("HumanoidRootPart")
+
+    if not myHRP then
+        return nil
+    end
+
+    local nearestBody = nil
+    local nearestDistance = math.huge
+
+    for _, player in ipairs(Players:GetPlayers()) do
+        if player ~= LocalPlayer then
+            local char = player.Character
+
+            if char and char:FindFirstChild(KILLER_MARKER_NAME, true) then
+                local body = GetKillerBody(char)
+
+                if body then
+                    local distance = (body.Position - myHRP.Position).Magnitude
+
+                    if distance < nearestDistance then
+                        nearestDistance = distance
+                        nearestBody = body
+                    end
+                end
+            end
+        end
+    end
+
+    return nearestBody
+end
+
+local function GetAimDirection()
+    local camera = workspace.CurrentCamera
+
+    if not AutoAimOn then
+        return camera.CFrame.LookVector
+    end
+
+    local myChar = LocalPlayer.Character
+    local myHRP = myChar and myChar:FindFirstChild("HumanoidRootPart")
+
+    if not myHRP then
+        return camera.CFrame.LookVector
+    end
+
+    local killerBody = GetNearestKiller()
+
+    if killerBody then
+        local direction = killerBody.Position - myHRP.Position
+
+        if direction.Magnitude > 0.001 then
+            return direction.Unit
+        end
+    end
+
+    return camera.CFrame.LookVector
+end
+
+local function ShootWithAutoAim()
+    local char = LocalPlayer.Character
+
+    if not char then
+        return
+    end
+
+    local twist = char:FindFirstChild("Twist of Fate")
+    if not twist then
+        return
+    end
+
+    local rightArm = twist:FindFirstChild("Right Arm")
+    if not rightArm then
+        return
+    end
+
+    local gun = rightArm:FindFirstChild("EmperorGun")
+    if not gun then
+        return
+    end
+
+    FireRemote:FireServer(gun, GetAimDirection())
+end
+
+local function ConnectShootButton(button)
+    if not button or ConnectedShootButtons[button] then
+        return
+    end
+
+    ConnectedShootButtons[button] = true
+
+    button.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.Touch then
+            ShootWithAutoAim()
+        end
+    end)
+end
+
+local function ScanForShootButton()
+    local survivorMob = PlayerGui:FindFirstChild("Survivor-mob")
+
+    if not survivorMob then
+        return
+    end
+
+    for _, object in ipairs(survivorMob:GetDescendants()) do
+        if object:IsA("ImageButton") and object.Name == "Gui-mob" then
+            ConnectShootButton(object)
+        end
+    end
+end
+
+PlayerGui.DescendantAdded:Connect(function(object)
+    if object:IsA("ImageButton") and object.Name == "Gui-mob" then
+        ConnectShootButton(object)
+    end
+end)
+
+UserInputService.InputBegan:Connect(function(input, processed)
+    if processed then
+        return
+    end
+
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        ShootWithAutoAim()
+    end
+end)
+
+LocalPlayer.CharacterAdded:Connect(function()
+    task.wait(0.5)
+    ScanForShootButton()
+end)
+
+ScanForShootButton()
+
+
 -- WINDUI
 --==================================================
 
@@ -351,25 +1151,19 @@ local WindUI = loadstring(game:HttpGet(
     "https://github.com/Footagesus/WindUI/releases/latest/download/main.lua"
 ))()
 
---==================================================
--- WINDOW
---==================================================
-
 local Window = WindUI:CreateWindow({
 
     Title = "KSS VD",
 
     Icon = "",
 
-    Author = "by .ftgs and .ftgs",
+    Author = "by ZERO",
 
-    -- ⭐ รูปพื้นหลัง
-    Background = "rbxassetid://125997756960172",
+    Background =
+        "rbxassetid://125997756960172",
 
-    -- ⭐ 0 = เห็นรูปเต็ม
     BackgroundImageTransparency = 0,
 
-    -- ⭐ ทำ Window โปร่งใส
     Transparent = true,
 
     Theme = "Dark",
@@ -378,11 +1172,12 @@ local Window = WindUI:CreateWindow({
 
     OpenButton = {
 
-        Title = "Open KSS VD",
+        Title = "KSS VD",
 
         Icon = "monitor",
 
-        CornerRadius = UDim.new(0,16),
+        CornerRadius =
+            UDim.new(0,16),
 
         StrokeThickness = 2,
 
@@ -400,7 +1195,7 @@ local Window = WindUI:CreateWindow({
 })
 
 --==================================================
--- FORCE BACKGROUND
+-- BACKGROUND
 --==================================================
 
 pcall(function()
@@ -418,9 +1213,11 @@ end)
 --==================================================
 
 local MainTab = Window:Tab({
+
     Title = "หน้าแรก",
     Icon = "home",
     Locked = false,
+
 })
 
 MainTab:Section({
@@ -429,8 +1226,11 @@ MainTab:Section({
 })
 
 MainTab:Toggle({
+
     Title = "Brightness",
+
     Desc = "เพิ่มความสว่าง",
+
     Value = BrightnessOn,
 
     Callback = function(state)
@@ -445,8 +1245,11 @@ MainTab:Toggle({
 })
 
 MainTab:Toggle({
+
     Title = "No Fog",
+
     Desc = "ลบหมอก",
+
     Value = NoFogOn,
 
     Callback = function(state)
@@ -461,8 +1264,11 @@ MainTab:Toggle({
 })
 
 MainTab:Toggle({
+
     Title = "Auto Brightness",
+
     Desc = "ความสว่างอัตโนมัติ",
+
     Value = AutoBrightness,
 
     Callback = function(state)
@@ -473,8 +1279,11 @@ MainTab:Toggle({
 })
 
 MainTab:Toggle({
+
     Title = "Auto No Fog",
+
     Desc = "ลบหมอกอัตโนมัติ",
+
     Value = AutoNoFog,
 
     Callback = function(state)
@@ -489,21 +1298,29 @@ MainTab:Toggle({
 --==================================================
 
 local ESPTab = Window:Tab({
+
     Title = "ESP",
+
     Icon = "eye",
+
     Locked = false,
+
 })
 
 ESPTab:Section({
+
     Title = "ESP Settings",
+
     TextSize = 18,
+
 })
 
 ESPTab:Toggle({
 
     Title = "ESP",
 
-    Desc = "ฆาตกร 🔴 | ผู้รอดชีวิต 🟢 | Generator 🟠",
+    Desc =
+        "ฆาตกร 🔴 | ผู้รอดชีวิต 🟢 | Generator 🟠",
 
     Value = ESPOn,
 
@@ -521,7 +1338,6 @@ ESPTab:Toggle({
             clearESP()
 
         end
-
     end
 })
 
@@ -546,14 +1362,14 @@ ESPTab:Button({
 
                 Title = "ESP",
 
-                Content = "รีเฟรช ESP แล้ว",
+                Content =
+                    "รีเฟรช ESP แล้ว",
 
                 Icon = "check",
 
                 Duration = 2,
 
             })
-
         end
     end
 })
@@ -569,6 +1385,7 @@ local CharacterTab = Window:Tab({
     Icon = "user",
 
     Locked = false,
+
 })
 
 CharacterTab:Section({
@@ -576,6 +1393,7 @@ CharacterTab:Section({
     Title = "Character",
 
     TextSize = 18,
+
 })
 
 CharacterTab:Toggle({
@@ -608,6 +1426,175 @@ CharacterTab:Toggle({
     end
 })
 
+CharacterTab:Toggle({
+
+    Title = "Auto Aim",
+    Desc = "ช่วยคำนวณทิศทางยิงไปยัง Killer ที่ใกล้ที่สุด",
+    Value = AutoAimOn,
+
+    Callback = function(state)
+        AutoAimOn = state
+    end
+})
+
+CharacterTab:Toggle({
+
+    Title = "Infinite Zoom",
+
+    Desc = "ซูมเข้า/ออกได้ไกลมาก",
+
+    Value = InfiniteZoomOn,
+
+    Callback = function(state)
+
+        setInfiniteZoom(state)
+
+    end
+})
+
+--==================================================
+-- GENERATOR TAB
+--==================================================
+
+local GeneratorTab = Window:Tab({
+
+    Title = "ปั่นไฟ",
+
+    Icon = "zap",
+
+    Locked = false,
+
+})
+
+GeneratorTab:Section({
+
+    Title = "Auto Generator",
+
+    TextSize = 18,
+
+})
+
+GeneratorTab:Toggle({
+
+    Title = "Auto Skill Check",
+
+    Desc = "กด Skill Check ให้อัตโนมัติ",
+
+    Value = AutoGeneratorOn,
+
+    Callback = function(state)
+
+        AutoGeneratorOn = state
+
+        GeneratorBusy = false
+
+        if not state then
+
+            ScourgeActive = false
+
+            PreviousVisible = false
+
+        else
+
+            RefreshGeneratorReferences()
+
+        end
+    end
+})
+
+GeneratorTab:Button({
+
+    Title = "Mode : SUCCESS",
+
+    Icon = "target",
+
+    Callback = function()
+
+        if GeneratorMode == "SUCCESS" then
+
+            GeneratorMode = "NEUTRAL"
+
+        elseif GeneratorMode == "NEUTRAL" then
+
+            GeneratorMode = "INSTANT"
+
+        else
+
+            GeneratorMode = "SUCCESS"
+
+        end
+
+        WindUI:Notify({
+
+            Title = "Auto Generator",
+
+            Content =
+                "Mode : "
+                .. GeneratorMode,
+
+            Icon = "check",
+
+            Duration = 2,
+
+        })
+    end
+})
+
+GeneratorTab:Button({
+
+    Title = "Refresh Generator",
+
+    Icon = "refresh-cw",
+
+    Callback = function()
+
+        RefreshGeneratorReferences()
+
+        WindUI:Notify({
+
+            Title = "Auto Generator",
+
+            Content =
+                "รีเฟรชระบบปั่นไฟแล้ว",
+
+            Icon = "check",
+
+            Duration = 2,
+
+        })
+    end
+})
+
+GeneratorTab:Paragraph({
+
+    Title = "วิธีใช้",
+
+    Desc =
+        "เดินไปที่ Generator แล้วเริ่มปั่นเอง\n"
+        .. "จากนั้น Auto Skill Check จะกดให้",
+
+})
+
+GeneratorTab:Paragraph({
+
+    Title = "Mode",
+
+    Desc =
+        "SUCCESS = กดในพื้นที่ Success\n"
+        .. "NEUTRAL = กดในพื้นที่ Neutral\n"
+        .. "INSTANT = จัดตำแหน่งแล้วกดทันที",
+
+})
+
+GeneratorTab:Paragraph({
+
+    Title = "King Scourge",
+
+    Desc =
+        "รองรับ Skill Check ของ King Scourge",
+
+})
+
 --==================================================
 -- INFO TAB
 --==================================================
@@ -619,6 +1606,7 @@ local InfoTab = Window:Tab({
     Icon = "info",
 
     Locked = false,
+
 })
 
 InfoTab:Section({
@@ -626,6 +1614,7 @@ InfoTab:Section({
     Title = "KSS VD",
 
     TextSize = 20,
+
 })
 
 InfoTab:Paragraph({
@@ -633,7 +1622,7 @@ InfoTab:Paragraph({
     Title = "Violence District",
 
     Desc =
-        "Brightness • No Fog • Auto Lighting • ESP • Noclip • Third Person",
+        "Brightness • No Fog • Auto Lighting • ESP • Noclip • Third Person • Infinite Zoom • Auto Skill Check • Auto Aim",
 
 })
 
@@ -668,3 +1657,7 @@ if ESPOn then
     updateGeneratorESP()
 
 end
+
+RefreshGeneratorReferences()
+
+print("KSS VD Loaded")
