@@ -1,7 +1,6 @@
 --==================================================
 -- VIOLENCE DISTRICT UI
 -- PlaceId: 93978595733734
--- UI ไม่หายหลังตาย
 --==================================================
 
 local Players = game:GetService("Players")
@@ -410,7 +409,7 @@ task.spawn(function()
 end)
 
 --==================================================
--- BRIGHTNESS
+-- BRIGHTNESS BUTTON
 --==================================================
 
 brightButton.Activated:Connect(function()
@@ -447,7 +446,7 @@ autoBright.Activated:Connect(function()
 end)
 
 --==================================================
--- NO FOG
+-- NO FOG BUTTON
 --==================================================
 
 fogButton.Activated:Connect(function()
@@ -508,11 +507,13 @@ Instance.new("UICorner",showButton).CornerRadius = UDim.new(1,0)
 --==================================================
 
 closeButton.Activated:Connect(function()
+
     main.Visible = false
     showButton.Visible = true
 end)
 
 showButton.Activated:Connect(function()
+
     main.Visible = true
     showButton.Visible = false
 end)
@@ -559,6 +560,7 @@ UIS.InputEnded:Connect(function(input)
 
     if input.UserInputType == Enum.UserInputType.Touch
     or input.UserInputType == Enum.UserInputType.MouseButton1 then
+
         dragging = false
     end
 end)
@@ -573,7 +575,10 @@ scale.Parent = main
 local function resize()
 
     local camera = workspace.CurrentCamera
-    if not camera then return end
+
+    if not camera then
+        return
+    end
 
     local size = camera.ViewportSize
 
@@ -599,32 +604,12 @@ workspace.CurrentCamera
 
 local function restoreUI()
 
-    task.wait(0.2)
+    task.wait(0.5)
 
     if gui and gui.Parent ~= PlayerGui then
         gui.Parent = PlayerGui
     end
 
-    if main then
-        main.Visible = true
-    end
-
-    if showButton then
-        showButton.Visible = false
-    end
-
-    if BrightnessOn then
-        Brightness()
-    end
-
-    if NoFogOn then
-        NoFog()
-    end
-
-    if ESPOn then
-        task.wait(0.3)
-        updateESP()
-    end
 end
 
 player.CharacterAdded:Connect(function()
@@ -632,14 +617,42 @@ player.CharacterAdded:Connect(function()
     restoreUI()
 
     -- ตรวจซ้ำหลังเกิด
-    for i = 1,10 do
+    task.spawn(function()
 
-        task.wait(0.5)
+        for i = 1,20 do
 
-        if gui and gui.Parent ~= PlayerGui then
-            gui.Parent = PlayerGui
+            task.wait(0.5)
+
+            if gui and gui.Parent ~= PlayerGui then
+                gui.Parent = PlayerGui
+            end
+
         end
+
+    end)
+
+end)
+
+--==================================================
+-- DETECT GUI REMOVED
+--==================================================
+
+gui.AncestryChanged:Connect(function(_,parent)
+
+    if parent == nil then
+
+        task.defer(function()
+
+            task.wait(0.2)
+
+            if gui then
+                gui.Parent = PlayerGui
+            end
+
+        end)
+
     end
+
 end)
 
 --==================================================
@@ -653,5 +666,7 @@ task.spawn(function()
         if gui and gui.Parent ~= PlayerGui then
             gui.Parent = PlayerGui
         end
+
     end
+
 end)
