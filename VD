@@ -1,17 +1,16 @@
 --==================================================
--- VIOLENCE DISTRICT UI
--- PlaceId: 93978595733734
+-- KSS VD | WINDUI
+-- IMAGE BACKGROUND
 --==================================================
 
 local Players = game:GetService("Players")
 local Lighting = game:GetService("Lighting")
 local RunService = game:GetService("RunService")
-local UIS = game:GetService("UserInputService")
 
-local player = Players.LocalPlayer
-local PlayerGui = player:WaitForChild("PlayerGui")
+local LocalPlayer = Players.LocalPlayer
 
 if game.PlaceId ~= 93978595733734 then
+    warn("KSS VD: Wrong Place")
     return
 end
 
@@ -24,6 +23,8 @@ local NoFogOn = false
 local AutoBrightness = false
 local AutoNoFog = false
 local ESPOn = false
+local NoclipOn = false
+local ThirdPersonOn = false
 
 --==================================================
 -- LIGHTING
@@ -43,630 +44,627 @@ local function NoFog()
     Lighting.FogStart = 100000
     Lighting.FogEnd = 100000
 
-    local atmosphere = Lighting:FindFirstChildOfClass("Atmosphere")
-
-    if atmosphere then
-        atmosphere.Density = 0
-        atmosphere.Haze = 0
-        atmosphere.Glare = 0
+    for _, obj in ipairs(Lighting:GetChildren()) do
+        if obj:IsA("Atmosphere") then
+            obj.Density = 0
+            obj.Haze = 0
+            obj.Glare = 0
+        end
     end
 end
-
---==================================================
--- GUI
---==================================================
-
-local oldGui = PlayerGui:FindFirstChild("ViolenceDistrictUI")
-
-if oldGui then
-    oldGui:Destroy()
-end
-
-local gui = Instance.new("ScreenGui")
-gui.Name = "ViolenceDistrictUI"
-gui.ResetOnSpawn = false
-gui.IgnoreGuiInset = false
-gui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-gui.Parent = PlayerGui
-
---==================================================
--- MAIN
---==================================================
-
-local main = Instance.new("Frame")
-main.Name = "Main"
-main.Size = UDim2.fromOffset(700,430)
-main.AnchorPoint = Vector2.new(0.5,0.5)
-main.Position = UDim2.fromScale(0.5,0.5)
-main.BackgroundColor3 = Color3.fromRGB(0,0,0)
-main.BorderSizePixel = 0
-main.Active = true
-main.Parent = gui
-
-Instance.new("UICorner",main).CornerRadius = UDim.new(0,35)
-
---==================================================
--- TITLE
---==================================================
-
-local title = Instance.new("TextLabel")
-title.Size = UDim2.new(1,-150,0,60)
-title.Position = UDim2.fromOffset(20,15)
-title.BackgroundTransparency = 1
-title.Text = "Violence District"
-title.TextColor3 = Color3.new(1,1,1)
-title.TextSize = 32
-title.Font = Enum.Font.GothamBold
-title.TextXAlignment = Enum.TextXAlignment.Left
-title.Parent = main
-
---==================================================
--- CLOSE
---==================================================
-
-local closeButton = Instance.new("TextButton")
-closeButton.Size = UDim2.fromOffset(70,50)
-closeButton.Position = UDim2.new(1,-90,0,15)
-closeButton.BackgroundColor3 = Color3.fromRGB(180,50,50)
-closeButton.Text = "ปิด"
-closeButton.TextColor3 = Color3.new(1,1,1)
-closeButton.TextSize = 20
-closeButton.Font = Enum.Font.GothamBold
-closeButton.BorderSizePixel = 0
-closeButton.Parent = main
-
-Instance.new("UICorner",closeButton).CornerRadius = UDim.new(0,18)
-
---==================================================
--- CARD
---==================================================
-
-local function makeCard(y,text)
-
-    local card = Instance.new("Frame")
-    card.Size = UDim2.new(1,-40,0,105)
-    card.Position = UDim2.fromOffset(20,y)
-    card.BackgroundColor3 = Color3.fromRGB(65,65,65)
-    card.BorderSizePixel = 0
-    card.Parent = main
-
-    Instance.new("UICorner",card).CornerRadius = UDim.new(0,22)
-
-    local label = Instance.new("TextLabel")
-    label.Size = UDim2.fromOffset(330,105)
-    label.Position = UDim2.fromOffset(20,0)
-    label.BackgroundTransparency = 1
-    label.Text = text
-    label.TextColor3 = Color3.new(1,1,1)
-    label.TextSize = 25
-    label.Font = Enum.Font.Gotham
-    label.TextXAlignment = Enum.TextXAlignment.Left
-    label.Parent = card
-
-    return card
-end
-
---==================================================
--- BUTTON
---==================================================
-
-local function makeButton(parent,x,text)
-
-    local b = Instance.new("TextButton")
-    b.Size = UDim2.fromOffset(150,70)
-    b.Position = UDim2.fromOffset(x,18)
-    b.BackgroundColor3 = Color3.fromRGB(130,135,150)
-    b.Text = text
-    b.TextColor3 = Color3.new(1,1,1)
-    b.TextSize = 21
-    b.Font = Enum.Font.GothamBold
-    b.BorderSizePixel = 0
-    b.Parent = parent
-
-    Instance.new("UICorner",b).CornerRadius = UDim.new(0,20)
-
-    return b
-end
-
---==================================================
--- BRIGHTNESS
---==================================================
-
-local card1 = makeCard(85,"เพิ่มความสว่าง + เอาหมอกออก")
-
-local brightButton = makeButton(card1,360,"เปิด")
-local autoBright = makeButton(card1,520,"ออโต้ : OFF")
-
---==================================================
--- NO FOG
---==================================================
-
-local card2 = makeCard(200,"เอาหมอกออก")
-
-local fogButton = makeButton(card2,360,"เปิด")
-local autoFog = makeButton(card2,520,"ออโต้ : OFF")
 
 --==================================================
 -- ESP
 --==================================================
 
-local espCard = Instance.new("Frame")
-espCard.Size = UDim2.fromOffset(360,100)
-espCard.Position = UDim2.fromOffset(20,320)
-espCard.BackgroundColor3 = Color3.fromRGB(65,65,65)
-espCard.BorderSizePixel = 0
-espCard.Parent = main
+local ESPObjects = {}
 
-Instance.new("UICorner",espCard).CornerRadius = UDim.new(0,22)
+local RED = Color3.fromRGB(255,60,60)
+local GREEN = Color3.fromRGB(60,255,100)
+local ORANGE = Color3.fromRGB(255,170,0)
 
-local espTitle = Instance.new("TextLabel")
-espTitle.Size = UDim2.fromOffset(160,50)
-espTitle.Position = UDim2.fromOffset(20,10)
-espTitle.BackgroundTransparency = 1
-espTitle.Text = "ESP"
-espTitle.TextColor3 = Color3.new(1,1,1)
-espTitle.TextSize = 30
-espTitle.Font = Enum.Font.Gotham
-espTitle.TextXAlignment = Enum.TextXAlignment.Left
-espTitle.Parent = espCard
+local function createESP(object, color)
 
-local espButton = Instance.new("TextButton")
-espButton.Size = UDim2.fromOffset(150,60)
-espButton.Position = UDim2.fromOffset(185,25)
-espButton.BackgroundColor3 = Color3.fromRGB(190,190,190)
-espButton.Text = "เปิด"
-espButton.TextColor3 = Color3.new(0,0,0)
-espButton.TextSize = 25
-espButton.Font = Enum.Font.GothamBold
-espButton.BorderSizePixel = 0
-espButton.Parent = espCard
-
-Instance.new("UICorner",espButton).CornerRadius = UDim.new(0,20)
-
---==================================================
--- ESP COLORS
---==================================================
-
-local ORANGE = Color3.fromRGB(255,140,0)
-local RED = Color3.fromRGB(255,50,50)
-local GREEN = Color3.fromRGB(50,255,80)
-
---==================================================
--- CREATE ESP
---==================================================
-
-local function createESP(object,color)
-
-    if not object then
+    if not object or not object.Parent then
         return
     end
 
-    if object:FindFirstChild("ZERO_ESP") then
+    if ESPObjects[object] then
+        ESPObjects[object].FillColor = color
+        ESPObjects[object].OutlineColor = color
         return
     end
 
     local highlight = Instance.new("Highlight")
+
     highlight.Name = "ZERO_ESP"
+    highlight.Adornee = object
     highlight.FillColor = color
-    highlight.OutlineColor = color
     highlight.FillTransparency = 0.65
+    highlight.OutlineColor = color
     highlight.OutlineTransparency = 0
     highlight.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
-    highlight.Adornee = object
     highlight.Parent = object
+
+    ESPObjects[object] = highlight
 end
 
---==================================================
--- REMOVE ESP
---==================================================
+local function removeESP(object)
 
-local function removeESP()
+    local esp = ESPObjects[object]
 
-    for _,object in ipairs(workspace:GetDescendants()) do
-
-        local esp = object:FindFirstChild("ZERO_ESP")
-
-        if esp then
+    if esp then
+        pcall(function()
             esp:Destroy()
-        end
-    end
+        end)
 
-    for _,plr in ipairs(Players:GetPlayers()) do
-
-        if plr.Character then
-
-            local esp = plr.Character:FindFirstChild("ZERO_ESP")
-
-            if esp then
-                esp:Destroy()
-            end
-        end
+        ESPObjects[object] = nil
     end
 end
 
---==================================================
--- GENERATOR
---==================================================
+local function clearESP()
+
+    for object, esp in pairs(ESPObjects) do
+
+        pcall(function()
+            esp:Destroy()
+        end)
+
+        ESPObjects[object] = nil
+    end
+end
 
 local function isGenerator(object)
 
     local name = string.lower(object.Name)
 
-    return string.find(name,"generator")
-        or string.find(name,"gen")
-        or string.find(name,"เครื่องปั่น")
+    return string.find(name, "generator")
+        or string.find(name, "เครื่องปั่น")
 end
 
---==================================================
--- ROLE
---==================================================
+local function getPlayerColor(player)
 
-local function getPlayerColor(plr)
+    local role = player:GetAttribute("Role")
 
-    if plr == player then
-        return nil
-    end
+    if role then
 
-    if plr.Team then
+        role = string.lower(tostring(role))
 
-        local teamName = string.lower(plr.Team.Name)
-
-        if string.find(teamName,"killer")
-        or string.find(teamName,"murderer")
-        or string.find(teamName,"ฆาตกร") then
+        if string.find(role, "killer")
+        or string.find(role, "murderer")
+        or string.find(role, "ฆาตกร") then
             return RED
         end
 
-        if string.find(teamName,"survivor")
-        or string.find(teamName,"survive")
-        or string.find(teamName,"ผู้เอาชีวิต") then
+        if string.find(role, "survivor")
+        or string.find(role, "survive")
+        or string.find(role, "ผู้รอดชีวิต") then
             return GREEN
         end
     end
 
-    local role = plr:GetAttribute("Role")
+    local team = player.Team
 
-    if typeof(role) == "string" then
+    if team then
 
-        role = string.lower(role)
+        local teamName = string.lower(team.Name)
 
-        if string.find(role,"killer")
-        or string.find(role,"murderer")
-        or string.find(role,"ฆาตกร") then
+        if string.find(teamName, "killer")
+        or string.find(teamName, "murderer")
+        or string.find(teamName, "ฆาตกร") then
             return RED
         end
 
-        if string.find(role,"survivor")
-        or string.find(role,"survive")
-        or string.find(role,"ผู้เอาชีวิต") then
+        if string.find(teamName, "survivor")
+        or string.find(teamName, "survive")
+        or string.find(teamName, "ผู้รอดชีวิต") then
             return GREEN
         end
     end
 
-    return nil
+    return GREEN
 end
 
---==================================================
--- UPDATE ESP
---==================================================
-
-local function updateESP()
+local function updatePlayerESP()
 
     if not ESPOn then
         return
     end
 
-    for _,plr in ipairs(Players:GetPlayers()) do
+    for _, player in ipairs(Players:GetPlayers()) do
 
-        local character = plr.Character
+        if player ~= LocalPlayer then
 
-        if character then
+            local character = player.Character
 
-            local color = getPlayerColor(plr)
-
-            if color then
-                createESP(character,color)
-            end
-        end
-    end
-
-    for _,object in ipairs(workspace:GetDescendants()) do
-
-        if object:IsA("Model") or object:IsA("BasePart") then
-
-            if isGenerator(object) then
-                createESP(object,ORANGE)
+            if character and character.Parent then
+                createESP(
+                    character,
+                    getPlayerColor(player)
+                )
             end
         end
     end
 end
 
---==================================================
--- ESP BUTTON
---==================================================
+local function updateGeneratorESP()
 
-espButton.Activated:Connect(function()
-
-    ESPOn = not ESPOn
-
-    if ESPOn then
-        espButton.Text = "ปิด"
-        updateESP()
-    else
-        espButton.Text = "เปิด"
-        removeESP()
-    end
-end)
-
-task.spawn(function()
-
-    while task.wait(1) do
-
-        if ESPOn then
-            updateESP()
-        end
-    end
-end)
-
---==================================================
--- BRIGHTNESS BUTTON
---==================================================
-
-brightButton.Activated:Connect(function()
-
-    BrightnessOn = not BrightnessOn
-
-    if BrightnessOn then
-        brightButton.Text = "เปิด"
-        Brightness()
-    else
-        brightButton.Text = "ปิด"
-    end
-end)
-
---==================================================
--- AUTO BRIGHTNESS
---==================================================
-
-autoBright.Activated:Connect(function()
-
-    AutoBrightness = not AutoBrightness
-
-    if AutoBrightness then
-
-        BrightnessOn = true
-        autoBright.Text = "ออโต้ : ON"
-        brightButton.Text = "เปิด"
-
-        Brightness()
-
-    else
-        autoBright.Text = "ออโต้ : OFF"
-    end
-end)
-
---==================================================
--- NO FOG BUTTON
---==================================================
-
-fogButton.Activated:Connect(function()
-
-    NoFogOn = not NoFogOn
-
-    if NoFogOn then
-        fogButton.Text = "เปิด"
-        NoFog()
-    else
-        fogButton.Text = "ปิด"
-    end
-end)
-
---==================================================
--- AUTO NO FOG
---==================================================
-
-autoFog.Activated:Connect(function()
-
-    AutoNoFog = not AutoNoFog
-
-    if AutoNoFog then
-
-        NoFogOn = true
-        autoFog.Text = "ออโต้ : ON"
-        fogButton.Text = "เปิด"
-
-        NoFog()
-
-    else
-        autoFog.Text = "ออโต้ : OFF"
-    end
-end)
-
---==================================================
--- SHOW BUTTON
---==================================================
-
-local showButton = Instance.new("TextButton")
-
-showButton.Size = UDim2.fromOffset(65,65)
-showButton.Position = UDim2.new(0,15,0.5,0)
-showButton.AnchorPoint = Vector2.new(0,0.5)
-showButton.BackgroundColor3 = Color3.fromRGB(0,0,0)
-showButton.Text = "ZERO"
-showButton.TextColor3 = Color3.new(1,1,1)
-showButton.TextSize = 14
-showButton.Font = Enum.Font.GothamBold
-showButton.Visible = false
-showButton.BorderSizePixel = 0
-showButton.Parent = gui
-
-Instance.new("UICorner",showButton).CornerRadius = UDim.new(1,0)
-
---==================================================
--- CLOSE / SHOW
---==================================================
-
-closeButton.Activated:Connect(function()
-
-    main.Visible = false
-    showButton.Visible = true
-end)
-
-showButton.Activated:Connect(function()
-
-    main.Visible = true
-    showButton.Visible = false
-end)
-
---==================================================
--- DRAG
---==================================================
-
-local dragging = false
-local dragStart
-local startPos
-
-title.InputBegan:Connect(function(input)
-
-    if input.UserInputType == Enum.UserInputType.Touch
-    or input.UserInputType == Enum.UserInputType.MouseButton1 then
-
-        dragging = true
-        dragStart = input.Position
-        startPos = main.Position
-    end
-end)
-
-UIS.InputChanged:Connect(function(input)
-
-    if dragging and
-    (
-        input.UserInputType == Enum.UserInputType.Touch
-        or input.UserInputType == Enum.UserInputType.MouseMovement
-    ) then
-
-        local delta = input.Position - dragStart
-
-        main.Position = UDim2.new(
-            startPos.X.Scale,
-            startPos.X.Offset + delta.X,
-            startPos.Y.Scale,
-            startPos.Y.Offset + delta.Y
-        )
-    end
-end)
-
-UIS.InputEnded:Connect(function(input)
-
-    if input.UserInputType == Enum.UserInputType.Touch
-    or input.UserInputType == Enum.UserInputType.MouseButton1 then
-
-        dragging = false
-    end
-end)
-
---==================================================
--- MOBILE SCALE
---==================================================
-
-local scale = Instance.new("UIScale")
-scale.Parent = main
-
-local function resize()
-
-    local camera = workspace.CurrentCamera
-
-    if not camera then
+    if not ESPOn then
         return
     end
 
-    local size = camera.ViewportSize
+    for _, object in ipairs(workspace:GetDescendants()) do
 
-    local sx = (size.X - 20) / 700
-    local sy = (size.Y - 40) / 430
+        if isGenerator(object) then
 
-    scale.Scale = math.clamp(
-        math.min(sx,sy),
-        0.5,
-        0.8
-    )
+            local model =
+                object:FindFirstAncestorOfClass("Model")
+
+            if model then
+
+                local player =
+                    Players:GetPlayerFromCharacter(model)
+
+                if not player then
+                    createESP(object, ORANGE)
+                end
+
+            else
+                createESP(object, ORANGE)
+            end
+        end
+    end
 end
 
-resize()
+task.spawn(function()
 
-workspace.CurrentCamera
-    :GetPropertyChangedSignal("ViewportSize")
-    :Connect(resize)
+    while task.wait(0.5) do
+
+        if ESPOn then
+            updatePlayerESP()
+        end
+
+    end
+end)
+
+task.spawn(function()
+
+    while task.wait(3) do
+
+        if ESPOn then
+            updateGeneratorESP()
+        end
+
+    end
+end)
 
 --==================================================
--- KEEP UI AFTER DEATH / RESPAWN
+-- PLAYER EVENTS
 --==================================================
 
-local function restoreUI()
+local function setupPlayer(player)
 
-    task.wait(0.5)
-
-    if gui and gui.Parent ~= PlayerGui then
-        gui.Parent = PlayerGui
+    if player == LocalPlayer then
+        return
     end
 
-end
+    player.CharacterAdded:Connect(function()
 
-player.CharacterAdded:Connect(function()
+        task.wait(1)
 
-    restoreUI()
-
-    -- ตรวจซ้ำหลังเกิด
-    task.spawn(function()
-
-        for i = 1,20 do
-
-            task.wait(0.5)
-
-            if gui and gui.Parent ~= PlayerGui then
-                gui.Parent = PlayerGui
-            end
-
+        if ESPOn then
+            updatePlayerESP()
         end
 
     end)
+end
 
-end)
+for _, player in ipairs(Players:GetPlayers()) do
+    setupPlayer(player)
+end
 
---==================================================
--- DETECT GUI REMOVED
---==================================================
+Players.PlayerAdded:Connect(setupPlayer)
 
-gui.AncestryChanged:Connect(function(_,parent)
+Players.PlayerRemoving:Connect(function(player)
 
-    if parent == nil then
-
-        task.defer(function()
-
-            task.wait(0.2)
-
-            if gui then
-                gui.Parent = PlayerGui
-            end
-
-        end)
-
+    if player.Character then
+        removeESP(player.Character)
     end
 
 end)
 
 --==================================================
--- EXTRA UI PROTECTION
+-- NOCLIP
+--==================================================
+
+local function setNoclip(state)
+    NoclipOn = state
+end
+
+RunService.Stepped:Connect(function()
+
+    if not NoclipOn then
+        return
+    end
+
+    local character = LocalPlayer.Character
+
+    if character then
+
+        for _, part in ipairs(character:GetDescendants()) do
+
+            if part:IsA("BasePart") then
+                part.CanCollide = false
+            end
+
+        end
+    end
+end)
+
+--==================================================
+-- THIRD PERSON
+--==================================================
+
+local function setThirdPerson(state)
+
+    ThirdPersonOn = state
+
+    if state then
+
+        LocalPlayer.CameraMode = Enum.CameraMode.Classic
+        LocalPlayer.CameraMinZoomDistance = 5
+        LocalPlayer.CameraMaxZoomDistance = 20
+
+    else
+
+        LocalPlayer.CameraMode = Enum.CameraMode.Classic
+        LocalPlayer.CameraMinZoomDistance = 0.5
+        LocalPlayer.CameraMaxZoomDistance = 20
+
+    end
+end
+
+--==================================================
+-- AUTO LIGHTING
 --==================================================
 
 task.spawn(function()
 
     while task.wait(1) do
 
-        if gui and gui.Parent ~= PlayerGui then
-            gui.Parent = PlayerGui
+        if AutoBrightness then
+            Brightness()
+        end
+
+        if AutoNoFog then
+            NoFog()
         end
 
     end
+end)
+
+--==================================================
+-- WINDUI
+--==================================================
+
+local WindUI = loadstring(game:HttpGet(
+    "https://github.com/Footagesus/WindUI/releases/latest/download/main.lua"
+))()
+
+--==================================================
+-- WINDOW
+--==================================================
+
+local Window = WindUI:CreateWindow({
+
+    Title = "KSS VD",
+
+    Icon = "",
+
+    Author = "by .ftgs and .ftgs",
+
+    -- ⭐ รูปพื้นหลัง
+    Background = "rbxassetid://125997756960172",
+
+    -- ⭐ 0 = เห็นรูปเต็ม
+    BackgroundImageTransparency = 0,
+
+    -- ⭐ ทำ Window โปร่งใส
+    Transparent = true,
+
+    Theme = "Dark",
+
+    Resizable = true,
+
+    OpenButton = {
+
+        Title = "Open KSS VD",
+
+        Icon = "monitor",
+
+        CornerRadius = UDim.new(0,16),
+
+        StrokeThickness = 2,
+
+        Color = ColorSequence.new(
+            Color3.fromHex("FF0F7B"),
+            Color3.fromHex("F89B29")
+        ),
+
+        OnlyMobile = false,
+
+        Enabled = true,
+
+        Draggable = true,
+    }
+})
+
+--==================================================
+-- FORCE BACKGROUND
+--==================================================
+
+pcall(function()
+
+    Window:SetBackgroundImage(
+        "rbxassetid://125997756960172"
+    )
+
+    Window:SetBackgroundImageTransparency(0)
 
 end)
+
+--==================================================
+-- MAIN TAB
+--==================================================
+
+local MainTab = Window:Tab({
+    Title = "หน้าแรก",
+    Icon = "home",
+    Locked = false,
+})
+
+MainTab:Section({
+    Title = "Lighting",
+    TextSize = 18,
+})
+
+MainTab:Toggle({
+    Title = "Brightness",
+    Desc = "เพิ่มความสว่าง",
+    Value = BrightnessOn,
+
+    Callback = function(state)
+
+        BrightnessOn = state
+
+        if state then
+            Brightness()
+        end
+
+    end
+})
+
+MainTab:Toggle({
+    Title = "No Fog",
+    Desc = "ลบหมอก",
+    Value = NoFogOn,
+
+    Callback = function(state)
+
+        NoFogOn = state
+
+        if state then
+            NoFog()
+        end
+
+    end
+})
+
+MainTab:Toggle({
+    Title = "Auto Brightness",
+    Desc = "ความสว่างอัตโนมัติ",
+    Value = AutoBrightness,
+
+    Callback = function(state)
+
+        AutoBrightness = state
+
+    end
+})
+
+MainTab:Toggle({
+    Title = "Auto No Fog",
+    Desc = "ลบหมอกอัตโนมัติ",
+    Value = AutoNoFog,
+
+    Callback = function(state)
+
+        AutoNoFog = state
+
+    end
+})
+
+--==================================================
+-- ESP TAB
+--==================================================
+
+local ESPTab = Window:Tab({
+    Title = "ESP",
+    Icon = "eye",
+    Locked = false,
+})
+
+ESPTab:Section({
+    Title = "ESP Settings",
+    TextSize = 18,
+})
+
+ESPTab:Toggle({
+
+    Title = "ESP",
+
+    Desc = "ฆาตกร 🔴 | ผู้รอดชีวิต 🟢 | Generator 🟠",
+
+    Value = ESPOn,
+
+    Callback = function(state)
+
+        ESPOn = state
+
+        if state then
+
+            updatePlayerESP()
+            updateGeneratorESP()
+
+        else
+
+            clearESP()
+
+        end
+
+    end
+})
+
+ESPTab:Button({
+
+    Title = "Refresh ESP",
+
+    Icon = "refresh-cw",
+
+    Callback = function()
+
+        if ESPOn then
+
+            clearESP()
+
+            task.wait(0.1)
+
+            updatePlayerESP()
+            updateGeneratorESP()
+
+            WindUI:Notify({
+
+                Title = "ESP",
+
+                Content = "รีเฟรช ESP แล้ว",
+
+                Icon = "check",
+
+                Duration = 2,
+
+            })
+
+        end
+    end
+})
+
+--==================================================
+-- CHARACTER TAB
+--==================================================
+
+local CharacterTab = Window:Tab({
+
+    Title = "ตัวละคร",
+
+    Icon = "user",
+
+    Locked = false,
+})
+
+CharacterTab:Section({
+
+    Title = "Character",
+
+    TextSize = 18,
+})
+
+CharacterTab:Toggle({
+
+    Title = "Noclip",
+
+    Desc = "เดินทะลุสิ่งกีดขวาง",
+
+    Value = NoclipOn,
+
+    Callback = function(state)
+
+        setNoclip(state)
+
+    end
+})
+
+CharacterTab:Toggle({
+
+    Title = "Third Person",
+
+    Desc = "มุมมองบุคคลที่สาม",
+
+    Value = ThirdPersonOn,
+
+    Callback = function(state)
+
+        setThirdPerson(state)
+
+    end
+})
+
+--==================================================
+-- INFO TAB
+--==================================================
+
+local InfoTab = Window:Tab({
+
+    Title = "ข้อมูล",
+
+    Icon = "info",
+
+    Locked = false,
+})
+
+InfoTab:Section({
+
+    Title = "KSS VD",
+
+    TextSize = 20,
+})
+
+InfoTab:Paragraph({
+
+    Title = "Violence District",
+
+    Desc =
+        "Brightness • No Fog • Auto Lighting • ESP • Noclip • Third Person",
+
+})
+
+InfoTab:Paragraph({
+
+    Title = "ESP สี",
+
+    Desc =
+        "ฆาตกร = แดง | ผู้รอดชีวิต = เขียว | Generator = ส้ม",
+
+})
+
+--==================================================
+-- START
+--==================================================
+
+MainTab:Select()
+
+if BrightnessOn then
+    Brightness()
+end
+
+if NoFogOn then
+    NoFog()
+end
+
+if ESPOn then
+
+    task.wait(0.5)
+
+    updatePlayerESP()
+    updateGeneratorESP()
+
+end
