@@ -7,7 +7,7 @@ local LocalPlayer = Players.LocalPlayer
 local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
 
 local SCRIPT_1 = "https://raw.githubusercontent.com/asiozxsae-code/KSS/refs/heads/main/KSS%20VD?token=GHSAT0AAAAAAEJKUHKCGBO5MQDL7U4MYWDM2VUTVIA"
-local SCRIPT_2 = "https://raw.githubusercontent.com/asiozxsae-code/KSS/refs/heads/main/KSS%20VD%20(BETA)?token=GHSAT0AAAAAAEJKUHKC2ARIJQIP3I2QQU4M2VUTVSA"
+local SCRIPT_2 = "https://raw.githubusercontent.com/asiozxsae-code/KSS_VD/refs/heads/main/KSS%20VD%20(BETA)"
 
 local gui = Instance.new("ScreenGui")
 gui.Name = "KSS_VD_ScriptSelector"
