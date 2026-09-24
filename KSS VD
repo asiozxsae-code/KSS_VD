@@ -1,7 +1,3 @@
--- KSS VD | Script Selector
--- เลือกสคริปต์แล้วเมนูจะลบตัวเองทันที
--- Script 1 / Script 2 โหลดจาก GitHub Raw
-
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
 local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
