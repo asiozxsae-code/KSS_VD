@@ -1,142 +1,128 @@
--- KSS VD Script Selector - Pastefy
--- Script 1 / Script 2 แยกกันเหมือนเดิม
--- เปลี่ยนเฉพาะแหล่งโหลดจาก GitHub -> Pastefy
+-- KSS VD | Script Selector
+-- เลือกสคริปต์แล้วเมนูจะลบตัวเองทันที
+-- Script 1 / Script 2 โหลดจาก GitHub Raw
+
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
 
 local SCRIPT_1 = "https://raw.githubusercontent.com/asiozxsae-code/KSS_VD/refs/heads/main/KSS%20VD"
 local SCRIPT_2 = "https://raw.githubusercontent.com/asiozxsae-code/KSS_VD/refs/heads/main/KSS%20VD%20(BETA)"
 
-local Players = game:GetService("Players")
-local player = Players.LocalPlayer
-local playerGui = player:WaitForChild("PlayerGui")
-
-local old = playerGui:FindFirstChild("KSS_VD_ScriptSelector")
-if old then old:Destroy() end
-
 local gui = Instance.new("ScreenGui")
 gui.Name = "KSS_VD_ScriptSelector"
 gui.ResetOnSpawn = false
-gui.IgnoreGuiInset = true
-gui.Parent = playerGui
+gui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+gui.Parent = PlayerGui
 
-local main = Instance.new("Frame")
-main.Size = UDim2.fromOffset(300, 205)
-main.Position = UDim2.fromScale(0.5, 0.5)
-main.AnchorPoint = Vector2.new(0.5, 0.5)
-main.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
-main.BorderSizePixel = 0
-main.Parent = gui
+local frame = Instance.new("Frame")
+frame.Name = "Selector"
+frame.AnchorPoint = Vector2.new(0.5, 0.5)
+frame.Position = UDim2.fromScale(0.5, 0.5)
+frame.Size = UDim2.fromOffset(330, 190)
+frame.BackgroundColor3 = Color3.fromRGB(15, 15, 18)
+frame.BorderSizePixel = 0
+frame.Parent = gui
 
 local corner = Instance.new("UICorner")
-corner.CornerRadius = UDim.new(0, 12)
-corner.Parent = main
+corner.CornerRadius = UDim.new(0, 16)
+corner.Parent = frame
+
+local stroke = Instance.new("UIStroke")
+stroke.Color = Color3.fromRGB(190, 30, 50)
+stroke.Thickness = 1.5
+stroke.Transparency = 0.2
+stroke.Parent = frame
 
 local title = Instance.new("TextLabel")
-title.Size = UDim2.new(1, -20, 0, 38)
-title.Position = UDim2.fromOffset(10, 10)
 title.BackgroundTransparency = 1
+title.Size = UDim2.new(1, -30, 0, 45)
+title.Position = UDim2.fromOffset(15, 12)
+title.Font = Enum.Font.GothamBold
 title.Text = "KSS VD"
 title.TextColor3 = Color3.new(1, 1, 1)
 title.TextSize = 22
-title.Font = Enum.Font.GothamBold
-title.Parent = main
+title.Parent = frame
 
-local status = Instance.new("TextLabel")
-status.Size = UDim2.new(1, -24, 0, 35)
-status.Position = UDim2.fromOffset(12, 48)
-status.BackgroundTransparency = 1
-status.Text = "เลือกสคริปต์ที่ต้องการ"
-status.TextColor3 = Color3.fromRGB(190, 190, 190)
-status.TextSize = 13
-status.Font = Enum.Font.Gotham
-status.TextWrapped = true
-status.Parent = main
+local sub = Instance.new("TextLabel")
+sub.BackgroundTransparency = 1
+sub.Size = UDim2.new(1, -30, 0, 24)
+sub.Position = UDim2.fromOffset(15, 48)
+sub.Font = Enum.Font.Gotham
+sub.Text = "เลือกสคริปต์ที่ต้องการใช้งาน"
+sub.TextColor3 = Color3.fromRGB(170, 170, 175)
+sub.TextSize = 13
+sub.Parent = frame
+
+local function makeButton(text, y, callback)
+    local b = Instance.new("TextButton")
+    b.AutoButtonColor = true
+    b.Size = UDim2.new(1, -30, 0, 48)
+    b.Position = UDim2.fromOffset(15, y)
+    b.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
+    b.BorderSizePixel = 0
+    b.Font = Enum.Font.GothamSemibold
+    b.Text = text
+    b.TextColor3 = Color3.new(1, 1, 1)
+    b.TextSize = 14
+    b.Parent = frame
+
+    local c = Instance.new("UICorner")
+    c.CornerRadius = UDim.new(0, 10)
+    c.Parent = b
+
+    b.MouseButton1Click:Connect(callback)
+    return b
+end
 
 local busy = false
 
-local function setStatus(text, good)
-    status.Text = text
-    status.TextColor3 = good
-        and Color3.fromRGB(120, 255, 150)
-        or Color3.fromRGB(255, 150, 150)
-end
+local function runSelected(url)
+    if busy then
+        return
+    end
 
-local function runSelected(url, button, originalText)
-    if busy then return end
     busy = true
-    button.Text = "กำลังโหลด..."
-    setStatus("กำลังโหลดจาก Pastefy...", true)
+    title.Text = "กำลังโหลด..."
+    sub.Text = "กำลังเปิดสคริปต์ที่เลือก"
+
+    for _, child in ipairs(frame:GetChildren()) do
+        if child:IsA("TextButton") then
+            child.Active = false
+            pcall(function()
+                child.Interactable = false
+            end)
+        end
+    end
+
+    -- ลบตัวเลือกออกก่อน แล้วจึงโหลดเฉพาะสคริปต์ที่เลือก
+    gui:Destroy()
 
     local okHttp, source = pcall(function()
         return game:HttpGet(url)
     end)
 
     if not okHttp then
-        busy = false
-        button.Text = originalText
-        setStatus("Pastefy โหลดไม่สำเร็จ — ดู Console", false)
-        warn("[KSS VD Selector] HttpGet Error:", source)
+        warn("KSS VD Script Selector: โหลด GitHub ไม่สำเร็จ: " .. tostring(source))
         return
     end
 
-    if type(source) ~= "string" or #source < 10 then
-        busy = false
-        button.Text = originalText
-        setStatus("ได้รับไฟล์ว่างหรือข้อมูลไม่ถูกต้อง", false)
-        warn("[KSS VD Selector] Invalid response")
-        return
-    end
-
-    if type(loadstring) ~= "function" then
-        busy = false
-        button.Text = originalText
-        setStatus("ตัวรันไม่มี loadstring", false)
-        warn("[KSS VD Selector] loadstring ไม่พร้อมใช้งาน")
-        return
-    end
-
-    local fn, compileError = loadstring(source)
-
+    local fn, compileErr = loadstring(source)
     if not fn then
-        busy = false
-        button.Text = originalText
-        setStatus("Compile Error — ดู Console", false)
-        warn("[KSS VD Selector] Compile Error:", compileError)
+        warn("KSS VD Script Selector: Compile Error: " .. tostring(compileErr))
         return
     end
 
-    setStatus("โหลดสำเร็จ กำลังเปิดสคริปต์...", true)
-    task.wait(0.15)
-    gui:Destroy()
-
-    task.spawn(function()
-        local okRun, runError = pcall(fn)
-        if not okRun then
-            warn("[KSS VD Selector] Runtime Error:", runError)
-        end
-    end)
+    local okRun, runErr = pcall(fn)
+    if not okRun then
+        warn("KSS VD Script Selector: Runtime Error: " .. tostring(runErr))
+    end
 end
 
-local function makeButton(text, y, url)
-    local button = Instance.new("TextButton")
-    button.Size = UDim2.new(1, -30, 0, 43)
-    button.Position = UDim2.fromOffset(15, y)
-    button.BackgroundColor3 = Color3.fromRGB(38, 38, 38)
-    button.BorderSizePixel = 0
-    button.Text = text
-    button.TextColor3 = Color3.new(1, 1, 1)
-    button.TextSize = 15
-    button.Font = Enum.Font.GothamMedium
-    button.AutoButtonColor = true
-    button.Parent = main
+makeButton("Script 1  •  KSS VD", 80, function()
+    runSelected(SCRIPT_1)
+end)
 
-    local c = Instance.new("UICorner")
-    c.CornerRadius = UDim.new(0, 8)
-    c.Parent = button
-
-    button.Activated:Connect(function()
-        runSelected(url, button, text)
-    end)
-end
-
-makeButton("Script 1  •  KSS VD", 88, SCRIPT_1)
-makeButton("Script 2  •  KSS VD BETA", 140, SCRIPT_2)
+makeButton("Script 2  •  KSS VD BETA", 135, function()
+    runSelected(SCRIPT_2)
+end)
