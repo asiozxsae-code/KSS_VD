@@ -1,0 +1,142 @@
+-- KSS VD Script Selector - Pastefy
+-- Script 1 / Script 2 แยกกันเหมือนเดิม
+-- เปลี่ยนเฉพาะแหล่งโหลดจาก GitHub -> Pastefy
+
+local SCRIPT_1 = "https://pastefy.app/SZpsIhwn/raw"
+local SCRIPT_2 = "https://pastefy.app/gEIz3HGQ/raw"
+
+local Players = game:GetService("Players")
+local player = Players.LocalPlayer
+local playerGui = player:WaitForChild("PlayerGui")
+
+local old = playerGui:FindFirstChild("KSS_VD_ScriptSelector")
+if old then old:Destroy() end
+
+local gui = Instance.new("ScreenGui")
+gui.Name = "KSS_VD_ScriptSelector"
+gui.ResetOnSpawn = false
+gui.IgnoreGuiInset = true
+gui.Parent = playerGui
+
+local main = Instance.new("Frame")
+main.Size = UDim2.fromOffset(300, 205)
+main.Position = UDim2.fromScale(0.5, 0.5)
+main.AnchorPoint = Vector2.new(0.5, 0.5)
+main.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+main.BorderSizePixel = 0
+main.Parent = gui
+
+local corner = Instance.new("UICorner")
+corner.CornerRadius = UDim.new(0, 12)
+corner.Parent = main
+
+local title = Instance.new("TextLabel")
+title.Size = UDim2.new(1, -20, 0, 38)
+title.Position = UDim2.fromOffset(10, 10)
+title.BackgroundTransparency = 1
+title.Text = "KSS VD"
+title.TextColor3 = Color3.new(1, 1, 1)
+title.TextSize = 22
+title.Font = Enum.Font.GothamBold
+title.Parent = main
+
+local status = Instance.new("TextLabel")
+status.Size = UDim2.new(1, -24, 0, 35)
+status.Position = UDim2.fromOffset(12, 48)
+status.BackgroundTransparency = 1
+status.Text = "เลือกสคริปต์ที่ต้องการ"
+status.TextColor3 = Color3.fromRGB(190, 190, 190)
+status.TextSize = 13
+status.Font = Enum.Font.Gotham
+status.TextWrapped = true
+status.Parent = main
+
+local busy = false
+
+local function setStatus(text, good)
+    status.Text = text
+    status.TextColor3 = good
+        and Color3.fromRGB(120, 255, 150)
+        or Color3.fromRGB(255, 150, 150)
+end
+
+local function runSelected(url, button, originalText)
+    if busy then return end
+    busy = true
+    button.Text = "กำลังโหลด..."
+    setStatus("กำลังโหลดจาก Pastefy...", true)
+
+    local okHttp, source = pcall(function()
+        return game:HttpGet(url)
+    end)
+
+    if not okHttp then
+        busy = false
+        button.Text = originalText
+        setStatus("Pastefy โหลดไม่สำเร็จ — ดู Console", false)
+        warn("[KSS VD Selector] HttpGet Error:", source)
+        return
+    end
+
+    if type(source) ~= "string" or #source < 10 then
+        busy = false
+        button.Text = originalText
+        setStatus("ได้รับไฟล์ว่างหรือข้อมูลไม่ถูกต้อง", false)
+        warn("[KSS VD Selector] Invalid response")
+        return
+    end
+
+    if type(loadstring) ~= "function" then
+        busy = false
+        button.Text = originalText
+        setStatus("ตัวรันไม่มี loadstring", false)
+        warn("[KSS VD Selector] loadstring ไม่พร้อมใช้งาน")
+        return
+    end
+
+    local fn, compileError = loadstring(source)
+
+    if not fn then
+        busy = false
+        button.Text = originalText
+        setStatus("Compile Error — ดู Console", false)
+        warn("[KSS VD Selector] Compile Error:", compileError)
+        return
+    end
+
+    setStatus("โหลดสำเร็จ กำลังเปิดสคริปต์...", true)
+    task.wait(0.15)
+    gui:Destroy()
+
+    task.spawn(function()
+        local okRun, runError = pcall(fn)
+        if not okRun then
+            warn("[KSS VD Selector] Runtime Error:", runError)
+        end
+    end)
+end
+
+local function makeButton(text, y, url)
+    local button = Instance.new("TextButton")
+    button.Size = UDim2.new(1, -30, 0, 43)
+    button.Position = UDim2.fromOffset(15, y)
+    button.BackgroundColor3 = Color3.fromRGB(38, 38, 38)
+    button.BorderSizePixel = 0
+    button.Text = text
+    button.TextColor3 = Color3.new(1, 1, 1)
+    button.TextSize = 15
+    button.Font = Enum.Font.GothamMedium
+    button.AutoButtonColor = true
+    button.Parent = main
+
+    local c = Instance.new("UICorner")
+    c.CornerRadius = UDim.new(0, 8)
+    c.Parent = button
+
+    button.Activated:Connect(function()
+        runSelected(url, button, text)
+    end)
+end
+
+makeButton("Script 1  •  KSS VD", 88, SCRIPT_1)
+makeButton("Script 2  •  KSS VD BETA", 140, SCRIPT_2)
