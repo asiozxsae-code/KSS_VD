@@ -2,7 +2,7 @@ local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
 local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
 
-local SCRIPT_1 = "https://raw.githubusercontent.com/asiozxsae-code/KSS_VD/refs/heads/main/KSS%20VD"
+local SCRIPT_1 = "https://pastefy.app/SZpsIhwn/raw"
 local SCRIPT_2 = "https://raw.githubusercontent.com/asiozxsae-code/KSS_VD/refs/heads/main/KSS%20VD%20(BETA)"
 
 local gui = Instance.new("ScreenGui")
@@ -91,28 +91,53 @@ local function runSelected(url)
         end
     end
 
-    -- ลบตัวเลือกออกก่อน แล้วจึงโหลดเฉพาะสคริปต์ที่เลือก
-    gui:Destroy()
 
     local okHttp, source = pcall(function()
         return game:HttpGet(url)
     end)
 
-    if not okHttp then
-        warn("KSS VD Script Selector: โหลด GitHub ไม่สำเร็จ: " .. tostring(source))
+    if not okHttp or type(source) ~= "string" or #source < 10 then
+        busy = false
+        title.Text = "KSS VD"
+        sub.Text = "โหลดไม่สำเร็จ — ตรวจสอบ Console"
+        warn("KSS VD Script Selector: HttpGet Error: " .. tostring(source))
+        for _, child in ipairs(frame:GetChildren()) do
+            if child:IsA("TextButton") then
+                child.Active = true
+                pcall(function()
+                    child.Interactable = true
+                end)
+            end
+        end
         return
     end
 
     local fn, compileErr = loadstring(source)
     if not fn then
+        busy = false
+        title.Text = "KSS VD"
+        sub.Text = "Compile Error — ตรวจสอบ Console"
         warn("KSS VD Script Selector: Compile Error: " .. tostring(compileErr))
+        for _, child in ipairs(frame:GetChildren()) do
+            if child:IsA("TextButton") then
+                child.Active = true
+                pcall(function()
+                    child.Interactable = true
+                end)
+            end
+        end
         return
     end
 
-    local okRun, runErr = pcall(fn)
-    if not okRun then
-        warn("KSS VD Script Selector: Runtime Error: " .. tostring(runErr))
-    end
+
+    gui:Destroy()
+
+    task.spawn(function()
+        local okRun, runErr = pcall(fn)
+        if not okRun then
+            warn("KSS VD Script Selector: Runtime Error: " .. tostring(runErr))
+        end
+    end)
 end
 
 makeButton("Script 1  •  KSS VD", 80, function()
