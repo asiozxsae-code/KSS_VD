@@ -6,7 +6,7 @@ local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
 local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
 
-local SCRIPT_1 = "https://raw.githubusercontent.com/asiozxsae-code/KSS_VD/refs/heads/main/KSS%20VD%201"
+local SCRIPT_1 = "https://raw.githubusercontent.com/asiozxsae-code/KSS_VD/refs/heads/main/KSS%20VD"
 local SCRIPT_2 = "https://raw.githubusercontent.com/asiozxsae-code/KSS_VD/refs/heads/main/KSS%20VD%20(BETA)"
 
 local gui = Instance.new("ScreenGui")
